@@ -28,6 +28,7 @@ export interface Message {
   id: string
   role: 'user' | 'assistant'
   content: ContentBlock[]
+  suggestedQueries?: string[]
   timestamp: number
   isStreaming?: boolean
   streamingStatus?: string

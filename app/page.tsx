@@ -1,25 +1,17 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Snowflake } from 'lucide-react'
+import Sidebar from '@/components/Sidebar'
 import ChatInput from '@/components/ChatInput'
 import SettingsModal from '@/components/SettingsModal'
 import { generateId, getConfig, saveChat } from '@/lib/store'
 import type { Chat } from '@/lib/types'
 
-const SUGGESTIONS = [
-  'Summarize sales performance this month',
-  'Who are the top 10 customers by revenue?',
-  'Compare Q1 vs Q2 performance',
-  'Show me trends in customer acquisition',
-]
-
 export default function Home() {
   const router = useRouter()
   const [showSettings, setShowSettings] = useState(false)
-  const [configured, setConfigured] = useState(false)
-
-  useEffect(() => { setConfigured(!!getConfig()?.accountUrl) }, [])
+  const [configured, setConfigured] = useState(() => !!getConfig()?.accountUrl)
 
   const startChat = (text: string) => {
     if (!getConfig()?.accountUrl) { setShowSettings(true); return }
@@ -38,40 +30,31 @@ export default function Home() {
   }
 
   return (
-    <div className="flex h-screen items-center justify-center bg-white px-4">
-      <div className="w-full max-w-2xl">
-        {/* Logo / Title */}
-        <div className="mb-10 flex flex-col items-center text-center">
-          <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl bg-gray-900">
-            <Snowflake size={21} className="text-white" />
+    <div className="flex h-screen overflow-hidden bg-white dark:bg-gray-950">
+      <Sidebar onSettingsClick={() => setShowSettings(true)} />
+
+      <div className="flex min-w-0 flex-1 items-center justify-center px-4">
+        <div className="w-full max-w-2xl">
+          {/* Logo / Title */}
+          <div className="mb-10 flex flex-col items-center text-center">
+            <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl bg-gray-900">
+              <Snowflake size={21} className="text-white" />
+            </div>
+            <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Cortex Chat</h1>
+            <p className="mt-1 text-sm text-gray-400 dark:text-gray-500">Powered by Snowflake Cortex Agents</p>
           </div>
-          <h1 className="text-2xl font-semibold text-gray-900">Cortex Chat</h1>
-          <p className="mt-1 text-sm text-gray-400">Powered by Snowflake Cortex Agents</p>
+
+          {/* Input */}
+          <ChatInput onSend={startChat} placeholder="Ask anything about your data…" />
+
+          {!configured && (
+            <p className="mt-6 text-center text-sm">
+              <button onClick={() => setShowSettings(true)} className="text-blue-600 hover:underline dark:text-blue-400">
+                Connect your Snowflake account →
+              </button>
+            </p>
+          )}
         </div>
-
-        {/* Input */}
-        <ChatInput onSend={startChat} placeholder="Ask anything about your data…" />
-
-        {/* Suggestion chips */}
-        <div className="mt-5 grid grid-cols-2 gap-2">
-          {SUGGESTIONS.map(s => (
-            <button
-              key={s}
-              onClick={() => startChat(s)}
-              className="rounded-xl border border-gray-200 px-4 py-3 text-left text-sm text-gray-600 transition-colors hover:border-gray-300 hover:bg-gray-50"
-            >
-              {s}
-            </button>
-          ))}
-        </div>
-
-        {!configured && (
-          <p className="mt-6 text-center text-sm">
-            <button onClick={() => setShowSettings(true)} className="text-blue-600 hover:underline">
-              Connect your Snowflake account →
-            </button>
-          </p>
-        )}
       </div>
 
       {showSettings && (

@@ -13,6 +13,18 @@ interface ApiMessage {
   content: ContentItem[]
 }
 
+function normalizeAccountBase(input: string): string {
+  const trimmed = input.trim().replace(/\/+$/, '')
+  if (!trimmed) return ''
+
+  // Allow users to paste only the account host by defaulting to HTTPS.
+  if (!/^https?:\/\//i.test(trimmed)) {
+    return `https://${trimmed}`
+  }
+
+  return trimmed
+}
+
 // Only include text content blocks in conversation history sent to Snowflake
 function toSnowflakeMessages(messages: ApiMessage[]) {
   return messages.map(m => ({
@@ -37,8 +49,23 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: 'Missing Snowflake configuration' }, { status: 400 })
   }
 
-  const base = config.accountUrl.replace(/\/+$/, '')
-  const url = `${base}/api/v2/databases/${encodeURIComponent(config.database)}/schemas/${encodeURIComponent(config.schema)}/agents/${encodeURIComponent(config.agentName)}:run`
+  const base = normalizeAccountBase(config.accountUrl)
+
+  let url: string
+  try {
+    url = new URL(
+      `/api/v2/databases/${encodeURIComponent(config.database)}/schemas/${encodeURIComponent(config.schema)}/agents/${encodeURIComponent(config.agentName)}:run`,
+      base,
+    ).toString()
+  } catch {
+    return Response.json(
+      {
+        error:
+          'Invalid Snowflake account URL. Use a valid host or full URL, for example: https://myaccount.snowflakecomputing.com',
+      },
+      { status: 400 },
+    )
+  }
 
   const authHeader =
     config.tokenType === 'KEYPAIR_JWT'

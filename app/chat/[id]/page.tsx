@@ -14,18 +14,20 @@ export default function ChatPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
 
-  const [chat, setChat] = useState<Chat | null>(null)
+  const [chat, setChat] = useState<Chat | null>(() => getChat(id))
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showSettings, setShowSettings] = useState(false)
   const [sidebarKey, setSidebarKey] = useState(0)
+  const [inputValue, setInputValue] = useState('')
+  const [inputFocusNonce, setInputFocusNonce] = useState(0)
 
   const bottomRef = useRef<HTMLDivElement>(null)
   const abortRef = useRef<AbortController | null>(null)
   // Keep a mutable ref so sendMessage never has stale chat state
   const chatRef = useRef<Chat | null>(null)
   const pendingMsgRef = useRef<string | null>(null)
-  const loadedRef = useRef(false)
+  const pendingLoadedRef = useRef(false)
 
   // Sync chat state into ref
   useEffect(() => { chatRef.current = chat }, [chat])
@@ -126,6 +128,16 @@ export default function ChatPage() {
             blocks = [...blocks, { type: 'text', text: responseText } as TextBlock]
           }
           updateAssistant(blocks)
+        } else if (event.type === 'suggestions') {
+          if (process.env.NODE_ENV !== 'production') console.debug('[chat] suggestions list event', event)
+          const suggestedQueries = event.queries.map(q => q.trim()).filter(Boolean)
+          setChat(prev => {
+            if (!prev) return prev
+            const msgs = prev.messages.map(m =>
+              m.id === assistantId ? { ...m, suggestedQueries } : m
+            )
+            return { ...prev, messages: msgs }
+          })
         } else if (event.type === 'table') {
           blocks = [...blocks, { type: 'table', columns: event.columns, rows: event.rows, sql: event.sql, title: event.title } as TableBlock]
           updateAssistant(blocks)
@@ -173,21 +185,22 @@ export default function ChatPage() {
     }
   }, []) // stable — uses chatRef internally
 
-  // ── Load chat & handle pending auto-send ────────────────────────────────────
+  // ── Handle pending auto-send from landing page ──────────────────────────────
   useEffect(() => {
-    if (loadedRef.current) return
-    loadedRef.current = true
+    if (pendingLoadedRef.current) return
+    pendingLoadedRef.current = true
 
-    const loaded = getChat(id)
-    if (!loaded) { router.push('/'); return }
-    setChat(loaded)
+    if (!chat) {
+      router.push('/')
+      return
+    }
 
     const pending = sessionStorage.getItem(`pending_${id}`)
     if (pending) {
       sessionStorage.removeItem(`pending_${id}`)
       pendingMsgRef.current = pending
     }
-  }, [id, router])
+  }, [chat, id, router])
 
   // Send pending message once chat state is set
   useEffect(() => {
@@ -204,7 +217,7 @@ export default function ChatPage() {
   if (!chat) return null
 
   return (
-    <div className="flex h-screen overflow-hidden bg-white">
+    <div className="flex h-screen overflow-hidden bg-white dark:bg-gray-950">
       <Sidebar
         currentChatId={id}
         onSettingsClick={() => setShowSettings(true)}
@@ -213,18 +226,26 @@ export default function ChatPage() {
 
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Header */}
-        <div className="flex items-center border-b border-gray-100 px-6 py-3">
-          <h1 className="truncate text-sm font-medium text-gray-600">{chat.title}</h1>
+        <div className="flex items-center border-b border-gray-100 px-6 py-3 dark:border-gray-800">
+          <h1 className="truncate text-sm font-medium text-gray-600 dark:text-gray-300">{chat.title}</h1>
         </div>
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto">
           <div className="mx-auto max-w-3xl px-4 py-4">
             {chat.messages.map(msg => (
-              <MessageBubble key={msg.id} message={msg} />
+              <MessageBubble
+                key={msg.id}
+                message={msg}
+                onSuggestionClick={query => {
+                  if (isLoading) return
+                  setInputValue(query)
+                  setInputFocusNonce(n => n + 1)
+                }}
+              />
             ))}
             {error && (
-              <div className="my-2 flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+              <div className="my-2 flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 dark:border-red-900/80 dark:bg-red-950/40 dark:text-red-300">
                 <AlertCircle size={14} />
                 {error}
               </div>
@@ -234,14 +255,17 @@ export default function ChatPage() {
         </div>
 
         {/* Input */}
-        <div className="border-t border-gray-100 px-4 pb-4 pt-3">
+        <div className="border-t border-gray-100 px-4 pb-4 pt-3 dark:border-gray-800">
           <div className="mx-auto max-w-3xl">
             <ChatInput
               onSend={sendMessage}
               isLoading={isLoading}
               onStop={handleStop}
+              value={inputValue}
+              onValueChange={setInputValue}
+              focusNonce={inputFocusNonce}
             />
-            <p className="mt-2 text-center text-xs text-gray-400">
+            <p className="mt-2 text-center text-xs text-gray-400 dark:text-gray-500">
               Snowflake Cortex Agents · responses may contain errors
             </p>
           </div>

@@ -11,9 +11,9 @@ export default function ThinkingBlock({ thinking, isStreaming }: ThinkingBlockPr
   const [open, setOpen] = useState(false)
 
   return (
-    <div className="my-2 rounded-lg border border-gray-200 bg-gray-50 text-sm">
+    <div className="my-2 rounded-lg border border-gray-200 bg-gray-50 text-sm dark:border-gray-700 dark:bg-gray-900">
       <button
-        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-gray-500 hover:bg-gray-100 transition-colors"
+        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-gray-500 hover:bg-gray-100 transition-colors dark:text-gray-400 dark:hover:bg-gray-800"
         onClick={() => setOpen(o => !o)}
       >
         <Brain size={13} className="flex-shrink-0" />
@@ -25,18 +25,18 @@ export default function ThinkingBlock({ thinking, isStreaming }: ThinkingBlockPr
             {[0, 100, 200].map(d => (
               <span
                 key={d}
-                className="inline-block w-1 h-1 rounded-full bg-gray-400 animate-bounce"
+                className="inline-block w-1 h-1 rounded-full bg-gray-400 animate-bounce dark:bg-gray-500"
                 style={{ animationDelay: `${d}ms` }}
               />
             ))}
           </span>
         )}
-        <span className="ml-auto text-gray-400">
+        <span className="ml-auto text-gray-400 dark:text-gray-500">
           {open ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
         </span>
       </button>
       {open && (
-        <div className="border-t border-gray-200 px-4 py-3 text-xs text-gray-500 whitespace-pre-wrap leading-relaxed font-mono">
+        <div className="border-t border-gray-200 px-4 py-3 text-xs text-gray-500 whitespace-pre-wrap leading-relaxed font-mono dark:border-gray-700 dark:text-gray-400">
           {thinking}
         </div>
       )}

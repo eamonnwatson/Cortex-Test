@@ -7,6 +7,7 @@ import VegaChart from './VegaChart'
 
 interface Props {
   message: Message
+  onSuggestionClick?: (query: string) => void
 }
 
 // Minimal markdown renderer: code fences, inline code, bold, newlines
@@ -22,7 +23,7 @@ function renderMarkdown(text: string): React.ReactNode {
     const code = match[2].replace(/\n$/, '')
     parts.push(
       <pre key={match.index} className="my-2 overflow-x-auto rounded-md bg-gray-950 p-3 text-xs text-gray-100 font-mono leading-relaxed">
-        {lang && <div className="mb-1.5 text-gray-500 text-[10px] uppercase">{lang}</div>}
+        {lang && <div className="mb-1.5 text-gray-500 text-[10px] uppercase dark:text-gray-400">{lang}</div>}
         <code>{code}</code>
       </pre>
     )
@@ -43,7 +44,7 @@ function renderInline(text: string, key: string): React.ReactNode {
     if (m.index > last) segs.push(...splitLines(text.slice(last, m.index), `${key}-${last}`))
     const raw = m[0]
     if (raw.startsWith('`'))
-      segs.push(<code key={m.index} className="rounded bg-gray-100 px-1 py-0.5 font-mono text-[0.85em] text-gray-800">{raw.slice(1, -1)}</code>)
+      segs.push(<code key={m.index} className="rounded bg-gray-100 px-1 py-0.5 font-mono text-[0.85em] text-gray-800 dark:bg-gray-800 dark:text-gray-200">{raw.slice(1, -1)}</code>)
     else
       segs.push(<strong key={m.index}>{raw.slice(2, -2)}</strong>)
     last = m.index + raw.length
@@ -59,7 +60,7 @@ function splitLines(text: string, key: string): React.ReactNode[] {
   })
 }
 
-export default function MessageBubble({ message }: Props) {
+export default function MessageBubble({ message, onSuggestionClick }: Props) {
   const isUser = message.role === 'user'
   const isEmpty = message.content.length === 0
 
@@ -68,30 +69,30 @@ export default function MessageBubble({ message }: Props) {
       {/* Avatar */}
       <div
         className={`mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full ${
-          isUser ? 'bg-gray-200' : 'bg-gray-900'
+          isUser ? 'bg-gray-200 dark:bg-gray-700' : 'bg-gray-900 dark:bg-gray-100'
         }`}
       >
         {isUser
-          ? <User size={13} className="text-gray-600" />
-          : <Sparkles size={13} className="text-white" />}
+          ? <User size={13} className="text-gray-600 dark:text-gray-200" />
+          : <Sparkles size={13} className="text-white dark:text-gray-900" />}
       </div>
 
       {/* Content */}
       {isUser ? (
-        <div className="max-w-[72%] rounded-2xl bg-gray-100 px-4 py-2.5 text-sm text-gray-900 leading-relaxed">
+        <div className="max-w-[72%] rounded-2xl bg-gray-100 px-4 py-2.5 text-sm text-gray-900 leading-relaxed dark:bg-gray-800 dark:text-gray-100">
           {(message.content as TextBlock[]).map(b => b.text).join('')}
         </div>
       ) : (
-        <div className="flex-1 min-w-0 text-sm text-gray-800 leading-relaxed">
+        <div className="flex-1 min-w-0 text-sm text-gray-800 leading-relaxed dark:text-gray-200">
           {isEmpty && message.isStreaming && (
             <div className="flex gap-1 py-3">
               {[0, 150, 300].map(d => (
-                <span key={d} className="h-1.5 w-1.5 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: `${d}ms` }} />
+                <span key={d} className="h-1.5 w-1.5 rounded-full bg-gray-400 animate-bounce dark:bg-gray-500" style={{ animationDelay: `${d}ms` }} />
               ))}
             </div>
           )}
           {message.streamingStatus && message.isStreaming && (
-            <p className="mb-2 text-xs text-gray-400 italic">{message.streamingStatus}</p>
+            <p className="mb-2 text-xs text-gray-400 italic dark:text-gray-500">{message.streamingStatus}</p>
           )}
           {message.content.map((block, i) => {
             if (block.type === 'thinking')
@@ -113,6 +114,23 @@ export default function MessageBubble({ message }: Props) {
             }
             return null
           })}
+          {!!message.suggestedQueries?.length && (
+            <div className="mt-3 rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-900">
+              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Suggested follow-ups</p>
+              <div className="flex flex-wrap gap-2">
+                {message.suggestedQueries.map((query, i) => (
+                  <button
+                    key={`${i}-${query}`}
+                    type="button"
+                    onClick={() => onSuggestionClick?.(query)}
+                    className="rounded-full border border-gray-300 bg-white px-2.5 py-1 text-left text-xs text-gray-700 transition-colors hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+                  >
+                    {query}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

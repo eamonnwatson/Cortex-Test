@@ -1,6 +1,7 @@
 export type StreamEvent =
   | { type: 'text'; text: string }
   | { type: 'thinking'; thinking: string }
+  | { type: 'suggestions'; queries: string[] }
   | { type: 'table'; columns: string[]; rows: (string | number | null)[][]; sql?: string; title?: string }
   | { type: 'chart'; chartSpec: string }
   | { type: 'status'; message: string; status: string }
@@ -67,6 +68,22 @@ export async function* readStream(
             break
           }
 
+          case 'response.suggested_queries': {
+            const raw = Array.isArray(data.suggested_queries) ? data.suggested_queries : []
+            const queries = raw
+              .map(item => {
+                if (typeof item === 'string') return item.trim()
+                if (item && typeof item.query === 'string') return item.query.trim()
+                return ''
+              })
+              .filter(Boolean)
+
+            if (queries.length) {
+              yield { type: 'suggestions', queries }
+            }
+            break
+          }
+
           case 'response.table': {
             const parsed = parseResultSet(data.result_set)
             if (parsed) {
@@ -90,6 +107,22 @@ export async function* readStream(
             break
 
           case 'response':
+            // Extract top-level suggested queries from the final aggregated payload.
+            {
+              const topLevelSuggestedQueries = Array.isArray(data.suggested_queries)
+                ? data.suggested_queries
+                    .map((item: { query?: string } | string) => {
+                      if (typeof item === 'string') return item.trim()
+                      if (item && typeof item.query === 'string') return item.query.trim()
+                      return ''
+                    })
+                    .filter(Boolean)
+                : []
+              if (topLevelSuggestedQueries.length) {
+                yield { type: 'suggestions', queries: topLevelSuggestedQueries }
+              }
+            }
+
             // Final aggregated event — streaming is complete
             yield { type: 'done' }
             return
