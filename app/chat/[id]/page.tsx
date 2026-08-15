@@ -254,7 +254,7 @@ export default function ChatPage() {
   if (!chat) return null
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[var(--background)]">
+    <div className="flex h-screen overflow-hidden [background:var(--page-bg)]">
       <Sidebar
         currentChatId={id}
         onSettingsClick={() => setShowSettings(true)}

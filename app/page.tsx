@@ -48,14 +48,14 @@ export default function Home() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[var(--background)]">
+    <div className="flex h-screen overflow-hidden [background:var(--page-bg)]">
       <Sidebar onSettingsClick={() => setShowSettings(true)} />
 
       <div className="flex min-w-0 flex-1 items-center justify-center px-4">
         <div className="w-full max-w-2xl">
           {/* Logo / Title */}
           <div className="mb-10 flex flex-col items-center text-center">
-            <div className="mb-4 rounded-2xl bg-[var(--brand-surface)] px-4 py-3">
+            <div className="mb-4 rounded-2xl bg-[var(--brand-surface)] px-4 py-3 dark:rounded-none dark:bg-transparent dark:px-0 dark:py-0">
               <Image
                 src="/brand/iqor-logo-light.svg"
                 alt="iQor"
