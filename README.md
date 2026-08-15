@@ -1,4 +1,4 @@
-# Cortex Chat
+# Answer Engine
 
 A lightweight Next.js chat UI for Snowflake Cortex Agents with streaming responses, reasoning blocks, tabular results, and chart rendering.
 

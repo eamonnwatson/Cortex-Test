@@ -27,7 +27,7 @@ export default function Sidebar({ currentChatId, onSettingsClick, refreshKey }: 
   if (collapsed) {
     return (
       <div className="flex w-12 flex-col items-center border-r border-gray-100 bg-gray-50 py-3 gap-2 dark:border-gray-800 dark:bg-gray-900">
-        <button onClick={() => router.push('/')} className="rounded-lg p-2 text-gray-600 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-800" aria-label="Cortex Chat home">
+        <button onClick={() => router.push('/')} className="rounded-lg p-2 text-gray-600 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-800" aria-label="Answer Engine home">
           <Snowflake size={15} />
         </button>
         <button onClick={() => setCollapsed(false)} className="rounded-lg p-2 text-gray-400 hover:bg-gray-200 dark:text-gray-500 dark:hover:bg-gray-800">
@@ -48,7 +48,7 @@ export default function Sidebar({ currentChatId, onSettingsClick, refreshKey }: 
           <span className="flex h-6 w-6 items-center justify-center rounded-md bg-gray-900">
             <Snowflake size={13} className="text-white" />
           </span>
-          Cortex Chat
+          Answer Engine
         </span>
         <button onClick={() => setCollapsed(true)} className="rounded p-1 text-gray-400 hover:bg-gray-200 dark:text-gray-500 dark:hover:bg-gray-800">
           <ChevronLeft size={15} />

@@ -37,7 +37,7 @@ export default function Home() {
             <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl bg-gray-900">
               <Snowflake size={21} className="text-white" />
             </div>
-            <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Cortex Chat</h1>
+            <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Answer Engine</h1>
             <p className="mt-1 text-sm text-gray-400 dark:text-gray-500">Powered by Snowflake Cortex Agents</p>
           </div>
 

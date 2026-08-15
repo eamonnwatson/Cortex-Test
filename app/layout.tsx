@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Cortex Chat',
+  title: 'Answer Engine',
   description: 'ChatGPT-style interface for Snowflake Cortex Agents',
 };
 
