@@ -4,6 +4,7 @@
 
 :root {
   --background: #ffffff;
+  --page-bg: #ffffff;
   --foreground: #0e1b3d;
   --brand-primary: #0f2d63;
   --brand-primary-strong: #0b214a;
@@ -37,6 +38,7 @@ html[data-theme='dark'] {
 
 html.dark {
   --background: #07112b;
+  --page-bg: radial-gradient(ellipse at bottom, #001e44 0%, rgba(0, 30, 68, 0) 65%), #001125;
   --foreground: #e9eefb;
   --brand-primary: #1e3f7a;
   --brand-primary-strong: #2a5194;
