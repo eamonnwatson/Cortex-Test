@@ -254,7 +254,7 @@ export default function ChatPage() {
   if (!chat) return null
 
   return (
-    <div className="flex h-screen overflow-hidden bg-white dark:bg-gray-950">
+    <div className="flex h-screen overflow-hidden bg-[var(--background)]">
       <Sidebar
         currentChatId={id}
         onSettingsClick={() => setShowSettings(true)}
@@ -263,8 +263,8 @@ export default function ChatPage() {
 
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Header */}
-        <div className="flex items-center border-b border-gray-100 px-6 py-3 dark:border-gray-800">
-          <h1 className="truncate text-sm font-medium text-gray-600 dark:text-gray-300">{chat.title}</h1>
+        <div className="flex items-center border-b border-[var(--brand-border)] bg-[var(--brand-surface)] px-6 py-3">
+          <h1 className="truncate text-sm font-medium text-[var(--brand-primary)]">{chat.title}</h1>
         </div>
 
         {/* Messages */}
@@ -292,7 +292,7 @@ export default function ChatPage() {
         </div>
 
         {/* Input */}
-        <div className="border-t border-gray-100 px-4 pb-4 pt-3 dark:border-gray-800">
+        <div className="border-t border-[var(--brand-border)] bg-[var(--brand-surface)] px-4 pb-4 pt-3">
           <div className="mx-auto max-w-3xl">
             <ChatInput
               onSend={sendMessage}
@@ -302,7 +302,7 @@ export default function ChatPage() {
               onValueChange={setInputValue}
               focusNonce={inputFocusNonce}
             />
-            <p className="mt-2 text-center text-xs text-gray-400 dark:text-gray-500">
+            <p className="mt-2 text-center text-xs text-[var(--brand-subtle-text)]">
               Snowflake Cortex Agents · responses may contain errors
             </p>
           </div>

@@ -46,7 +46,7 @@ export default function SettingsModal({ onClose }: Props) {
                   onClick={() => handleThemeChange(option)}
                   className={`rounded-lg border px-3 py-2 text-sm capitalize transition-colors ${
                     themePreference === option
-                      ? 'border-gray-900 bg-gray-900 text-white dark:border-gray-200 dark:bg-gray-200 dark:text-gray-900'
+                      ? 'border-[var(--brand-primary)] bg-[var(--brand-primary)] text-white'
                       : 'border-gray-200 text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800'
                   }`}
                 >
@@ -67,7 +67,7 @@ export default function SettingsModal({ onClose }: Props) {
           </button>
           <button
             onClick={handleSave}
-            className="flex items-center gap-1.5 rounded-lg bg-gray-900 px-4 py-2 text-sm text-white hover:bg-gray-700 transition-colors"
+            className="flex items-center gap-1.5 rounded-lg bg-[var(--brand-primary)] px-4 py-2 text-sm text-white hover:bg-[var(--brand-primary-strong)] transition-colors"
           >
             {saved && <CheckCircle size={13} />}
             {saved ? 'Saved!' : 'Save'}

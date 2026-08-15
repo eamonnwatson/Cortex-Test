@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Answer Engine',
-  description: 'ChatGPT-style interface for Snowflake Cortex Agents',
+  title: 'iQor Answer Engine',
+  description: 'Internal AI assistant for CX insights and operations at iQor.',
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
