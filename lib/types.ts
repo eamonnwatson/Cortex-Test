@@ -41,12 +41,3 @@ export interface Chat {
   createdAt: number
   updatedAt: number
 }
-
-export interface SnowflakeConfig {
-  accountUrl: string
-  database: string
-  schema: string
-  agentName: string
-  authToken: string
-  tokenType: 'OAUTH' | 'KEYPAIR_JWT' | 'PROGRAMMATIC_ACCESS_TOKEN'
-}

@@ -5,17 +5,14 @@ import { Snowflake } from 'lucide-react'
 import Sidebar from '@/components/Sidebar'
 import ChatInput from '@/components/ChatInput'
 import SettingsModal from '@/components/SettingsModal'
-import { generateId, getConfig, saveChat } from '@/lib/store'
+import { generateId, saveChat } from '@/lib/store'
 import type { Chat } from '@/lib/types'
 
 export default function Home() {
   const router = useRouter()
   const [showSettings, setShowSettings] = useState(false)
-  const [configured, setConfigured] = useState(() => !!getConfig()?.accountUrl)
 
   const startChat = (text: string) => {
-    if (!getConfig()?.accountUrl) { setShowSettings(true); return }
-
     const chatId = generateId()
     const newChat: Chat = {
       id: chatId,
@@ -46,25 +43,10 @@ export default function Home() {
 
           {/* Input */}
           <ChatInput onSend={startChat} placeholder="Ask anything about your data…" />
-
-          {!configured && (
-            <p className="mt-6 text-center text-sm">
-              <button onClick={() => setShowSettings(true)} className="text-blue-600 hover:underline dark:text-blue-400">
-                Connect your Snowflake account →
-              </button>
-            </p>
-          )}
         </div>
       </div>
 
-      {showSettings && (
-        <SettingsModal
-          onClose={() => {
-            setShowSettings(false)
-            setConfigured(!!getConfig()?.accountUrl)
-          }}
-        />
-      )}
+      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
     </div>
   )
 }

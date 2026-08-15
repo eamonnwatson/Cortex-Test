@@ -71,7 +71,7 @@ export async function* readStream(
           case 'response.suggested_queries': {
             const raw = Array.isArray(data.suggested_queries) ? data.suggested_queries : []
             const queries = raw
-              .map(item => {
+              .map((item: { query?: string } | string) => {
                 if (typeof item === 'string') return item.trim()
                 if (item && typeof item.query === 'string') return item.query.trim()
                 return ''

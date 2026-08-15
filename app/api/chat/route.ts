@@ -1,7 +1,17 @@
 import { NextRequest } from 'next/server'
-import type { SnowflakeConfig } from '@/lib/types'
 
 export const runtime = 'nodejs'
+
+type SnowflakeTokenType = 'OAUTH' | 'KEYPAIR_JWT' | 'PROGRAMMATIC_ACCESS_TOKEN'
+
+interface SnowflakeEnvConfig {
+  accountUrl: string
+  database: string
+  schema: string
+  agentName: string
+  authToken: string
+  tokenType: SnowflakeTokenType
+}
 
 interface ContentItem {
   type: string
@@ -25,6 +35,47 @@ function normalizeAccountBase(input: string): string {
   return trimmed
 }
 
+function readSnowflakeConfigFromEnv():
+  | { config: SnowflakeEnvConfig }
+  | { error: string } {
+  const accountUrl = process.env.SNOWFLAKE_ACCOUNT_URL?.trim() ?? ''
+  const database = process.env.SNOWFLAKE_DATABASE?.trim() ?? ''
+  const schema = process.env.SNOWFLAKE_SCHEMA?.trim() ?? ''
+  const agentName = process.env.SNOWFLAKE_AGENT_NAME?.trim() ?? ''
+  const authToken = process.env.SNOWFLAKE_AUTH_TOKEN?.trim() ?? ''
+  const rawTokenType = process.env.SNOWFLAKE_TOKEN_TYPE?.trim().toUpperCase() ?? 'PROGRAMMATIC_ACCESS_TOKEN'
+
+  const missing: string[] = []
+  if (!accountUrl) missing.push('SNOWFLAKE_ACCOUNT_URL')
+  if (!database) missing.push('SNOWFLAKE_DATABASE')
+  if (!schema) missing.push('SNOWFLAKE_SCHEMA')
+  if (!agentName) missing.push('SNOWFLAKE_AGENT_NAME')
+  if (!authToken) missing.push('SNOWFLAKE_AUTH_TOKEN')
+
+  if (missing.length > 0) {
+    return { error: `Missing Snowflake environment variables: ${missing.join(', ')}` }
+  }
+
+  const allowedTokenTypes: SnowflakeTokenType[] = ['PROGRAMMATIC_ACCESS_TOKEN', 'OAUTH', 'KEYPAIR_JWT']
+  if (!allowedTokenTypes.includes(rawTokenType as SnowflakeTokenType)) {
+    return {
+      error:
+        'Invalid SNOWFLAKE_TOKEN_TYPE. Allowed values: PROGRAMMATIC_ACCESS_TOKEN, OAUTH, KEYPAIR_JWT',
+    }
+  }
+
+  return {
+    config: {
+      accountUrl,
+      database,
+      schema,
+      agentName,
+      authToken,
+      tokenType: rawTokenType as SnowflakeTokenType,
+    },
+  }
+}
+
 // Only include text content blocks in conversation history sent to Snowflake
 function toSnowflakeMessages(messages: ApiMessage[]) {
   return messages.map(m => ({
@@ -36,18 +87,24 @@ function toSnowflakeMessages(messages: ApiMessage[]) {
 }
 
 export async function POST(request: NextRequest) {
-  let body: { messages: ApiMessage[]; config: SnowflakeConfig }
+  let body: { messages: ApiMessage[] }
   try {
     body = await request.json()
   } catch {
     return Response.json({ error: 'Invalid request body' }, { status: 400 })
   }
 
-  const { messages, config } = body
+  const { messages } = body
 
-  if (!config?.accountUrl || !config?.database || !config?.schema || !config?.agentName || !config?.authToken) {
-    return Response.json({ error: 'Missing Snowflake configuration' }, { status: 400 })
+  if (!Array.isArray(messages)) {
+    return Response.json({ error: 'Invalid request body: messages must be an array' }, { status: 400 })
   }
+
+  const envConfig = readSnowflakeConfigFromEnv()
+  if ('error' in envConfig) {
+    return Response.json({ error: envConfig.error }, { status: 500 })
+  }
+  const { config } = envConfig
 
   const base = normalizeAccountBase(config.accountUrl)
 

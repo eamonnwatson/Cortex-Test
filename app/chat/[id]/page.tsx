@@ -6,9 +6,20 @@ import Sidebar from '@/components/Sidebar'
 import MessageBubble from '@/components/MessageBubble'
 import ChatInput from '@/components/ChatInput'
 import SettingsModal from '@/components/SettingsModal'
-import { generateId, getChat, getConfig, saveChat } from '@/lib/store'
+import { generateId, getChat, saveChat } from '@/lib/store'
 import { readStream } from '@/lib/stream-parser'
 import type { Chat, ChartBlock, ContentBlock, Message, TableBlock, TextBlock, ThinkingBlock } from '@/lib/types'
+
+function normalizeGeneratedTitle(raw: string): string | null {
+  const cleaned = raw
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/^["'`]+/, '')
+    .replace(/["'`]+$/, '')
+
+  if (!cleaned) return null
+  return cleaned.slice(0, 80)
+}
 
 export default function ChatPage() {
   const { id } = useParams<{ id: string }>()
@@ -41,9 +52,7 @@ export default function ChatPage() {
   const sendMessage = useCallback(async (text: string) => {
     const currentChat = chatRef.current
     if (!currentChat) return
-
-    const config = getConfig()
-    if (!config?.accountUrl) { setShowSettings(true); return }
+    const isFirstTurn = currentChat.messages.length === 0
 
     setError(null)
 
@@ -72,6 +81,34 @@ export default function ChatPage() {
     setSidebarKey(k => k + 1)
     setIsLoading(true)
 
+    // Start title generation in parallel with Cortex for the first user turn.
+    if (isFirstTurn) {
+      void fetch('/api/chat/title', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: text }),
+      })
+        .then(async res => {
+          if (!res.ok) return null
+          const payload = await res.json().catch(() => null) as { title?: unknown } | null
+          if (typeof payload?.title !== 'string') return null
+          return normalizeGeneratedTitle(payload.title)
+        })
+        .then(title => {
+          if (!title) return
+          setChat(prev => {
+            if (!prev || prev.id !== currentChat.id || prev.title === title) return prev
+            const updated = { ...prev, title, updatedAt: Date.now() }
+            saveChat(updated)
+            setSidebarKey(k => k + 1)
+            return updated
+          })
+        })
+        .catch(() => {
+          // Title generation is best-effort and should never block chat UX.
+        })
+    }
+
     const controller = new AbortController()
     abortRef.current = controller
 
@@ -95,7 +132,7 @@ export default function ChatPage() {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: historyMessages, config }),
+        body: JSON.stringify({ messages: historyMessages }),
         signal: controller.signal,
       })
 

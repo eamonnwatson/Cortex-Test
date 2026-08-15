@@ -1,7 +1,6 @@
-import type { Chat, SnowflakeConfig } from './types'
+import type { Chat } from './types'
 
 const CHATS_KEY = 'cortex_chats'
-const CONFIG_KEY = 'cortex_config'
 
 export function getChats(): Chat[] {
   if (typeof window === 'undefined') return []
@@ -26,20 +25,6 @@ export function saveChat(chat: Chat): void {
 export function deleteChat(id: string): void {
   if (typeof window === 'undefined') return
   localStorage.setItem(CHATS_KEY, JSON.stringify(getChats().filter(c => c.id !== id)))
-}
-
-export function getConfig(): SnowflakeConfig | null {
-  if (typeof window === 'undefined') return null
-  try {
-    return JSON.parse(localStorage.getItem(CONFIG_KEY) || 'null')
-  } catch {
-    return null
-  }
-}
-
-export function saveConfig(config: SnowflakeConfig): void {
-  if (typeof window === 'undefined') return
-  localStorage.setItem(CONFIG_KEY, JSON.stringify(config))
 }
 
 export function generateId(): string {
