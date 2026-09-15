@@ -8,7 +8,7 @@ import ChatInput from '@/components/ChatInput'
 import SettingsModal from '@/components/SettingsModal'
 import { generateId, getChat, saveChat } from '@/lib/store'
 import { readStream } from '@/lib/stream-parser'
-import type { Chat, ChartBlock, ContentBlock, Message, TableBlock, TextBlock, ThinkingBlock } from '@/lib/types'
+import type { Chat, ChartBlock, ContentBlock, Message, TableBlock, TextBlock, ThinkingBlock, ToolUseBlock } from '@/lib/types'
 
 function normalizeGeneratedTitle(raw: string): string | null {
   const cleaned = raw
@@ -127,6 +127,12 @@ export default function ChatPage() {
       })
     }
 
+    const completeThinkingBlocks = () => {
+      blocks = blocks.map(block =>
+        block.type === 'thinking' ? { ...block, isComplete: true } : block
+      )
+    }
+
     try {
       const historyMessages = currentChat.messages.concat(userMsg)
       const res = await fetch('/api/chat', {
@@ -156,6 +162,7 @@ export default function ChatPage() {
           }
           updateAssistant(blocks)
         } else if (event.type === 'text') {
+          completeThinkingBlocks()
           const last = blocks.at(-1)
           if (last?.type === 'text') {
             responseText = (last as TextBlock).text + event.text
@@ -165,6 +172,49 @@ export default function ChatPage() {
             blocks = [...blocks, { type: 'text', text: responseText } as TextBlock]
           }
           updateAssistant(blocks)
+        } else if (event.type === 'tool_use') {
+          if (event.name === 'system_execute_sql') {
+            completeThinkingBlocks()
+            blocks = [...blocks, {
+              type: 'tool',
+              toolUseId: event.toolUseId,
+              name: event.name,
+              semanticModel: event.semanticModel,
+              sql: event.sql,
+            } as ToolUseBlock]
+          }
+          setChat(prev => {
+            if (!prev) return prev
+            const msgs = prev.messages.map(m =>
+              m.id === assistantId ? { ...m, streamingStatus: `Using tool ${event.name}` } : m
+            )
+            const next = { ...prev, messages: msgs }
+            chatRef.current = next
+            return next
+          })
+          updateAssistant(blocks)
+        } else if (event.type === 'tool_result') {
+          blocks = blocks.map(block =>
+            block.type === 'tool' && block.toolUseId === event.toolUseId
+              ? {
+                  ...block,
+                  isComplete: true,
+                  semanticModelPath: event.semanticModelPath,
+                  executedSql: event.sql,
+                }
+              : block
+          )
+          updateAssistant(blocks)
+          setChat(prev => {
+            if (!prev) return prev
+            const message = event.name ? `${event.name}: ${event.status}` : `Tool: ${event.status}`
+            const msgs = prev.messages.map(m =>
+              m.id === assistantId ? { ...m, streamingStatus: message } : m
+            )
+            const next = { ...prev, messages: msgs }
+            chatRef.current = next
+            return next
+          })
         } else if (event.type === 'suggestions') {
           if (process.env.NODE_ENV !== 'production') console.debug('[chat] suggestions list event', event)
           const suggestedQueries = event.queries.map(q => q.trim()).filter(Boolean)
@@ -178,9 +228,11 @@ export default function ChatPage() {
             return next
           })
         } else if (event.type === 'table') {
+          completeThinkingBlocks()
           blocks = [...blocks, { type: 'table', columns: event.columns, rows: event.rows, sql: event.sql, title: event.title } as TableBlock]
           updateAssistant(blocks)
         } else if (event.type === 'chart') {
+          completeThinkingBlocks()
           blocks = [...blocks, { type: 'chart', chartSpec: event.chartSpec } as ChartBlock]
           updateAssistant(blocks)
         } else if (event.type === 'status') {

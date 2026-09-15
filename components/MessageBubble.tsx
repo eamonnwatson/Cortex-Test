@@ -1,7 +1,8 @@
 'use client'
 import { Sparkles, User } from 'lucide-react'
-import type { ChartBlock, Message, TableBlock as TBBlock, TextBlock, ThinkingBlock as TBlock } from '@/lib/types'
+import type { ChartBlock, Message, TableBlock as TBBlock, TextBlock, ThinkingBlock as TBlock, ToolUseBlock as ToolBlock } from '@/lib/types'
 import ThinkingBlock from './ThinkingBlock'
+import ToolUseBlock from './ToolUseBlock'
 import TableBlock from './TableBlock'
 import VegaChart from './VegaChart'
 
@@ -96,7 +97,9 @@ export default function MessageBubble({ message, onSuggestionClick }: Props) {
           )}
           {message.content.map((block, i) => {
             if (block.type === 'thinking')
-              return <ThinkingBlock key={i} thinking={(block as TBlock).thinking} isStreaming={message.isStreaming} />
+              return <ThinkingBlock key={i} thinking={(block as TBlock).thinking} isComplete={(block as TBlock).isComplete} isStreaming={message.isStreaming} />
+            if (block.type === 'tool')
+              return <ToolUseBlock key={i} block={block as ToolBlock} isComplete={(block as ToolBlock).isComplete} isStreaming={message.isStreaming} />
             if (block.type === 'table') {
               const b = block as TBBlock
               return <TableBlock key={i} columns={b.columns} rows={b.rows} sql={b.sql} title={b.title} />

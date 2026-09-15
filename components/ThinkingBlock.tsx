@@ -4,11 +4,13 @@ import { ChevronDown, ChevronRight, Brain } from 'lucide-react'
 
 interface ThinkingBlockProps {
   thinking: string
+  isComplete?: boolean
   isStreaming?: boolean
 }
 
-export default function ThinkingBlock({ thinking, isStreaming }: ThinkingBlockProps) {
+export default function ThinkingBlock({ thinking, isComplete, isStreaming }: ThinkingBlockProps) {
   const [open, setOpen] = useState(false)
+  const active = !isComplete && isStreaming
 
   return (
     <div className="my-2 rounded-lg border border-gray-200 bg-gray-50 text-sm dark:border-gray-700 dark:bg-gray-900">
@@ -18,9 +20,9 @@ export default function ThinkingBlock({ thinking, isStreaming }: ThinkingBlockPr
       >
         <Brain size={13} className="flex-shrink-0" />
         <span className="text-xs font-medium">
-          {isStreaming ? 'Thinking' : 'Thought for a moment'}
+          {active ? 'Thinking' : 'Thought for a moment'}
         </span>
-        {isStreaming && (
+        {active && (
           <span className="flex gap-0.5 ml-0.5">
             {[0, 100, 200].map(d => (
               <span
