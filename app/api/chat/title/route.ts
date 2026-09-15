@@ -42,7 +42,8 @@ export async function POST(request: NextRequest) {
       instructions:
         'Generate a concise title from the user question only. Return plain text only with no punctuation wrappers or explanation. 3 - 6 words. Avoid using the words "question" or "ask". Describe the primary subject of the question',
       input: question.slice(0, MAX_QUESTION_CHARS),
-      max_output_tokens: 24,
+      reasoning: { effort: 'minimal' },
+      max_output_tokens: 128,
     })
 
     const title = normalizeTitle(response.output_text ?? '')
