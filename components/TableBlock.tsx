@@ -1,10 +1,11 @@
 'use client'
 import { useState } from 'react'
 import { BarChart2, Copy, Download, Table2 } from 'lucide-react'
+import type { TableColumn } from '@/lib/types'
 import ChartBlock from './ChartBlock'
 
 interface TableBlockProps {
-  columns: string[]
+  columns: TableColumn[] | string[]
   rows: (string | number | null)[][]
   sql?: string
   title?: string
@@ -14,6 +15,25 @@ type ChartType = 'bar' | 'line' | 'area' | 'pie'
 
 function isNumeric(v: string | number | null) {
   return v !== null && !isNaN(Number(v))
+}
+
+function isNumericType(type?: string) {
+  return /^(?:FIXED|NUMBER|NUMERIC|DECIMAL|DEC|INT|INTEGER|BIGINT|SMALLINT|TINYINT|BYTEINT|FLOAT|FLOAT4|FLOAT8|DOUBLE|DOUBLE PRECISION|REAL)$/i.test(type?.trim() ?? '')
+}
+
+function normalizeColumns(columns: TableColumn[] | string[]): TableColumn[] {
+  return columns.map(column => typeof column === 'string' ? { name: column } : column)
+}
+
+function formatCell(cell: string | number | null, column: TableColumn) {
+  if (cell === null || !isNumericType(column.type) || column.scale === undefined || !isNumeric(cell)) {
+    return cell === null ? null : String(cell)
+  }
+
+  return Number(cell).toLocaleString('en-US', {
+    useGrouping: false,
+    maximumFractionDigits: Math.max(0, Math.floor(column.scale)),
+  })
 }
 
 function escapeCsvCell(value: string | number | null) {
@@ -36,19 +56,20 @@ function safeFilenamePart(text?: string) {
 }
 
 export default function TableBlock({ columns, rows, sql, title }: TableBlockProps) {
+  const normalizedColumns = normalizeColumns(columns)
   const [view, setView] = useState<'table' | 'chart'>('table')
   const [chartType, setChartType] = useState<ChartType>('bar')
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'error'>('idle')
 
   const chartData = rows.slice(0, 200).map(row =>
-    Object.fromEntries(columns.map((c, i) => [c, row[i] as string | number]))
+    Object.fromEntries(normalizedColumns.map((column, i) => [column.name, row[i] as string | number]))
   )
 
   const sample = rows[0] ?? []
-  const xKey = columns[0]
-  const yKeys = columns.filter((_, i) => i > 0 && isNumeric(sample[i]))
+  const xKey = normalizedColumns[0]?.name
+  const yKeys = normalizedColumns.filter((column, i) => i > 0 && (isNumericType(column.type) || isNumeric(sample[i]))).map(column => column.name)
   const canChart = yKeys.length > 0
-  const csv = toCsv(columns, rows)
+  const csv = toCsv(normalizedColumns.map(column => column.name), rows)
 
   async function handleCopyCsv() {
     try {
@@ -141,12 +162,12 @@ export default function TableBlock({ columns, rows, sql, title }: TableBlockProp
           <table className="w-full text-xs">
             <thead className="sticky top-0 bg-gray-50 dark:bg-gray-950">
               <tr>
-                {columns.map(col => (
+                {normalizedColumns.map(column => (
                   <th
-                    key={col}
+                    key={column.name}
                     className="whitespace-nowrap px-3 py-2 text-left font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500"
                   >
-                    {col}
+                    {column.name}
                   </th>
                 ))}
               </tr>
@@ -156,7 +177,7 @@ export default function TableBlock({ columns, rows, sql, title }: TableBlockProp
                 <tr key={i} className="hover:bg-gray-50 dark:hover:bg-gray-900">
                   {row.map((cell, j) => (
                     <td key={j} className="whitespace-nowrap px-3 py-1.5 text-gray-700 dark:text-gray-300">
-                      {cell === null ? <span className="italic text-gray-300 dark:text-gray-600">null</span> : String(cell)}
+                      {cell === null ? <span className="italic text-gray-300 dark:text-gray-600">null</span> : formatCell(cell, normalizedColumns[j] ?? { name: '' })}
                     </td>
                   ))}
                 </tr>
