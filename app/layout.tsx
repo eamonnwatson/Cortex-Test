@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from 'next/script'
 import "./globals.css";
 import ThemeController from '@/components/ThemeController'
 
@@ -26,11 +27,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       suppressHydrationWarning
     >
       <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(function(){try{var key='cortex_theme_preference';var pref=localStorage.getItem(key)||'system';var dark=window.matchMedia('(prefers-color-scheme: dark)').matches;var resolved=pref==='dark'||(pref==='system'&&dark)?'dark':'light';var root=document.documentElement;root.classList.toggle('dark',resolved==='dark');root.setAttribute('data-theme',resolved);}catch(_){}})();`,
-          }}
-        />
+        <Script id="theme-bootstrap" strategy="beforeInteractive">
+          {`(function(){try{var key='cortex_theme_preference';var pref=localStorage.getItem(key)||'system';var dark=window.matchMedia('(prefers-color-scheme: dark)').matches;var resolved=pref==='dark'||(pref==='system'&&dark)?'dark':'light';var root=document.documentElement;root.classList.toggle('dark',resolved==='dark');root.setAttribute('data-theme',resolved);}catch(_){}})();`}
+        </Script>
       </head>
       <body className="min-h-full flex flex-col">
         <ThemeController />

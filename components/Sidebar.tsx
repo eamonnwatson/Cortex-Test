@@ -1,27 +1,24 @@
 'use client'
-import { useState } from 'react'
+import { useMemo, useState, useSyncExternalStore } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { ChevronLeft, ChevronRight, MessageSquare, Plus, Settings, Trash2 } from 'lucide-react'
-import { deleteChat, getChats } from '@/lib/store'
+import { deleteChat, getChatsSnapshot, parseChatsSnapshot, subscribeToChats } from '@/lib/store'
 
 interface Props {
   currentChatId?: string
   onSettingsClick: () => void
-  refreshKey?: number
 }
 
-export default function Sidebar({ currentChatId, onSettingsClick, refreshKey }: Props) {
+export default function Sidebar({ currentChatId, onSettingsClick }: Props) {
   const router = useRouter()
   const [collapsed, setCollapsed] = useState(false)
-  const [, forceRender] = useState(0)
-  void refreshKey
-  const chats = getChats()
+  const chatsSnapshot = useSyncExternalStore(subscribeToChats, getChatsSnapshot, () => '[]')
+  const chats = useMemo(() => parseChatsSnapshot(chatsSnapshot), [chatsSnapshot])
 
   const handleDelete = (e: React.MouseEvent, id: string) => {
     e.stopPropagation()
     deleteChat(id)
-    forceRender(v => v + 1)
     if (id === currentChatId) router.push('/')
   }
 

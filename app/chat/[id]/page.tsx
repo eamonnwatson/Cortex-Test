@@ -29,7 +29,6 @@ export default function ChatPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showSettings, setShowSettings] = useState(false)
-  const [sidebarKey, setSidebarKey] = useState(0)
   const [inputValue, setInputValue] = useState('')
   const [inputFocusNonce, setInputFocusNonce] = useState(0)
 
@@ -76,9 +75,9 @@ export default function ChatPage() {
       messages: [...currentChat.messages, userMsg, assistantMsg],
       updatedAt: Date.now(),
     }
+    chatRef.current = withUser
     setChat(withUser)
     saveChat({ ...withUser, messages: withUser.messages.filter(m => m.id !== assistantId) })
-    setSidebarKey(k => k + 1)
     setIsLoading(true)
 
     // Start title generation in parallel with Cortex for the first user turn.
@@ -96,13 +95,12 @@ export default function ChatPage() {
         })
         .then(title => {
           if (!title) return
-          setChat(prev => {
-            if (!prev || prev.id !== currentChat.id || prev.title === title) return prev
-            const updated = { ...prev, title, updatedAt: Date.now() }
-            saveChat(updated)
-            setSidebarKey(k => k + 1)
-            return updated
-          })
+          const latest = chatRef.current
+          if (!latest || latest.id !== currentChat.id || latest.title === title) return
+          const updated = { ...latest, title, updatedAt: Date.now() }
+          chatRef.current = updated
+          setChat(updated)
+          saveChat(updated)
         })
         .catch(() => {
           // Title generation is best-effort and should never block chat UX.
@@ -123,7 +121,9 @@ export default function ChatPage() {
         const msgs = prev.messages.map(m =>
           m.id === assistantId ? { ...m, content: newBlocks, isStreaming: streaming } : m
         )
-        return { ...prev, messages: msgs }
+        const next = { ...prev, messages: msgs }
+        chatRef.current = next
+        return next
       })
     }
 
@@ -173,7 +173,9 @@ export default function ChatPage() {
             const msgs = prev.messages.map(m =>
               m.id === assistantId ? { ...m, suggestedQueries } : m
             )
-            return { ...prev, messages: msgs }
+            const next = { ...prev, messages: msgs }
+            chatRef.current = next
+            return next
           })
         } else if (event.type === 'table') {
           blocks = [...blocks, { type: 'table', columns: event.columns, rows: event.rows, sql: event.sql, title: event.title } as TableBlock]
@@ -188,7 +190,9 @@ export default function ChatPage() {
             const msgs = prev.messages.map(m =>
               m.id === assistantId ? { ...m, streamingStatus: event.message } : m
             )
-            return { ...prev, messages: msgs }
+            const next = { ...prev, messages: msgs }
+            chatRef.current = next
+            return next
           })
         } else if (event.type === 'error') {
           throw new Error(event.message)
@@ -196,26 +200,28 @@ export default function ChatPage() {
       }
 
       // Persist the final message (clear streamingStatus)
-      setChat(prev => {
-        if (!prev) return prev
-        const msgs = prev.messages.map(m =>
+      const latest = chatRef.current
+      if (latest) {
+        const msgs = latest.messages.map(m =>
           m.id === assistantId ? { ...m, content: blocks, isStreaming: false, streamingStatus: undefined } : m
         )
-        const final = { ...prev, messages: msgs, updatedAt: Date.now() }
+        const final = { ...latest, messages: msgs, updatedAt: Date.now() }
+        chatRef.current = final
+        setChat(final)
         saveChat(final)
-        return final
-      })
+      }
     } catch (err: unknown) {
       if (err instanceof Error && err.name === 'AbortError') return
       setError(err instanceof Error ? err.message : String(err))
       // Remove the empty assistant placeholder
-      setChat(prev => {
-        if (!prev) return prev
-        const msgs = prev.messages.filter(m => m.id !== assistantId)
-        const rolled = { ...prev, messages: msgs }
+      const latest = chatRef.current
+      if (latest) {
+        const msgs = latest.messages.filter(m => m.id !== assistantId)
+        const rolled = { ...latest, messages: msgs }
+        chatRef.current = rolled
+        setChat(rolled)
         saveChat(rolled)
-        return rolled
-      })
+      }
     } finally {
       setIsLoading(false)
       abortRef.current = null
@@ -258,7 +264,6 @@ export default function ChatPage() {
       <Sidebar
         currentChatId={id}
         onSettingsClick={() => setShowSettings(true)}
-        refreshKey={sidebarKey}
       />
 
       <div className="flex min-w-0 flex-1 flex-col">
