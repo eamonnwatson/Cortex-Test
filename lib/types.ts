@@ -6,11 +6,30 @@ export interface TextBlock {
 export interface ThinkingBlock {
   type: 'thinking'
   thinking: string
+  isComplete?: boolean
+}
+
+export interface ToolUseBlock {
+  type: 'tool'
+  toolUseId: string
+  name: string
+  isComplete?: boolean
+  semanticModel?: string
+  sql?: string
+  semanticModelPath?: string
+  executedSql?: string
+}
+
+export interface TableColumn {
+  name: string
+  type?: string
+  precision?: number
+  scale?: number
 }
 
 export interface TableBlock {
   type: 'table'
-  columns: string[]
+  columns: TableColumn[]
   rows: (string | number | null)[][]
   sql?: string
   title?: string
@@ -22,7 +41,7 @@ export interface ChartBlock {
   chartSpec: string
 }
 
-export type ContentBlock = TextBlock | ThinkingBlock | TableBlock | ChartBlock
+export type ContentBlock = TextBlock | ThinkingBlock | ToolUseBlock | TableBlock | ChartBlock
 
 export interface Message {
   id: string
